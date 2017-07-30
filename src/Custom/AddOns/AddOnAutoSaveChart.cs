@@ -296,13 +296,13 @@ namespace NinjaTrader.NinjaScript.AddOns
         Button imageSaveButton = null;
         Button startButton = null;
         Button clearButton = null;
-        Button testButton = null;
+       
         TextBox txtOutputFolder = null;
         private AccountSelector accountSelector = null;
         TextBox txtLog = null;
         String accountName = null;
 
-        private InstrumentSelector instrumentSelector;
+        
 
         public AddOnSaveChartTab()
         {
@@ -346,14 +346,6 @@ namespace NinjaTrader.NinjaScript.AddOns
                     //};
 
                     txtLog = LogicalTreeHelper.FindLogicalNode(pageContent, "outputBox") as TextBox;
-
-                    #region TESTCode
-                        testButton = LogicalTreeHelper.FindLogicalNode(pageContent, "testButton") as Button;
-                        testButton.Click += OnTestButtonClick;
-                        instrumentSelector = LogicalTreeHelper.FindLogicalNode(pageContent, "instrumentSelector") as InstrumentSelector;
-                        if (instrumentSelector != null)
-                            instrumentSelector.InstrumentChanged += OnInstrumentChanged;
-                    #endregion
 
                 }
 
@@ -628,27 +620,14 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
             accountSelector.Cleanup();
 
-            #region TESTCode
-            instrumentSelector.Cleanup();
-            #endregion
         }
 
         #region TESTCode
 
-        private void OnInstrumentChanged(object sender, EventArgs e)
-        {
-            Instrument = sender as Cbi.Instrument;
-            NinjaTrader.Code.Output.Process("OnInstrumentChanged(): " + Instrument.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-        }
 
         private void OnTestButtonClick(object sender, RoutedEventArgs e)
         {
-            NinjaTrader.Server.HdsClient client = new NinjaTrader.Server.HdsClient();
-
-            Connection con = Connection.ClientConnection;
-            NinjaTrader.Code.Output.Process("Client:", NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-            MarketReplay.DumpMarketDepth(Instrument, new DateTime(2017, 3, 6), new DateTime(2017, 5, 12), outputFolder + "/test5.txt");
-            //NinjaTrader.Code.Output.Process("Date=" + new DateTime(2017, 3, 9), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+           
 
             //MarketReplay replay = new MarketReplay(Instrument, new DateTime(2017, 3, 11));
             ////replay.OnMarketData(MarketDataType.Ask, 100, 1, new DateTime(2017, 3, 11, 13, 0, 0));
