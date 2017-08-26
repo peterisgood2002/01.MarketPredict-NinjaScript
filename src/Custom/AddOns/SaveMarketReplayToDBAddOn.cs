@@ -29,6 +29,8 @@ using NinjaTrader.Server;
 using System.Reflection;
 using NinjaTrader.Core;
 using NinjaTrader.Custom.MongoDB;
+using MongoDB.Bson;
+using System.IO;
 #endregion
 
 //This namespace holds Add ons in this folder and is required. Do not change it. 
@@ -206,6 +208,7 @@ namespace NinjaTrader.NinjaScript.AddOns
     {
         String connectionString = "mongodb://localhost:27017/";
         String tempLocation = "E:\\新增資料夾\\TEST\\tempLoc.txt";
+        string database = "Develop";
         TextBox txtConnStr = null;
         TextBox tempLoc = null;
         InstrumentSelector instrument = null;
@@ -260,14 +263,21 @@ namespace NinjaTrader.NinjaScript.AddOns
 
         private void OnStartButtonClick(object sender, RoutedEventArgs e)
         {
-
-
+            #region Right Code
             MongoDBMethod.registerClass();
             MongoClient connection = new MongoClient(connectionString);
-            MongoDBMethod.readMarketId(connection, "Develop", Instrument);
 
+            ObjectId marketId = MongoDBMethod.readMarketId(connection, database, Instrument);
 
-
+            if (cbDownloadAll.IsChecked == true)
+            {
+                //TODO Perform download all
+            }
+            else
+            {
+                ObjectId contractId = MongoDBMethod.readContractId(connection, database, marketId, Instrument);
+            }
+            #endregion
 
             #region Save Historical data from server
             //foreach (Connection c in Connection.Connections)
@@ -289,7 +299,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             //    NinjaTrader.Code.Output.Process(String.Format("Date:{0} ", a.Date), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
             //    NinjaTrader.Code.Output.Process(String.Format("Offset:{0} ", a.Offset), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
             //}
-            //MarketReplay.DumpMarketDepth(Instrument, new DateTime(2017, 3, 6), new DateTime(2017, 3, 6), tempLocation );
+            MarketReplay.DumpMarketDepth(Instrument, new DateTime(2017, 3, 6), new DateTime(2017, 3, 6), tempLocation);
             //NinjaTrader.Code.Output.Process("Date=" + new DateTime(2017, 3, 9), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
         }
         private void MarketReplayCallBack(NinjaTrader.Cbi.ErrorCode error, string str, object obj)

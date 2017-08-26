@@ -31,82 +31,69 @@ namespace NinjaTrader.Custom.MongoDB
         }
         public static ObjectId readMarketId(MongoClient connection, String dbName, Instrument instrument)
         {
-            NinjaTrader.Code.Output.Process("Connection:" + connection + "DB = " + dbName, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            NinjaTrader.Code.Output.Process("[readMarketId] Connection:" + connection + "DB = " + dbName, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
             IMongoDatabase db = connection.GetDatabase(dbName);
             IMongoCollection<Market> collection = db.GetCollection<Market>(MongoDBTable.MARKET.ToString());
-
-            List<Market> result = collection.Find<Market>(Builders<Market>.Filter.Eq(Market.Field.MARKET_ID.ToString(), instrument.MasterInstrument.Name)).ToList();
+            /*Filter*/
+            FilterDefinition<Market> filter = Builders<Market>.Filter.Eq(Market.Field.MARKET_NAME.ToString(), instrument.MasterInstrument.Name);
+            List<Market> result = collection.Find<Market>( filter).ToList();
 
             if( result.Count == 0 )
             {
-                Market market = new Market(
-                                     instrument.MasterInstrument.Name, 
-                                     instrument.MasterInstrument.Currency.ToString(),
-                                     instrument.MasterInstrument.Description,
-                                     instrument.MasterInstrument.InstrumentType.ToString(),
-                                     instrument.MasterInstrument.TickSize,
-                                     instrument.MasterInstrument.PointValue,
-                                     instrument.MasterInstrument.Url.ToString());
-                collection.InsertOne(market);
-                NinjaTrader.Code.Output.Process("Result:" + market, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                Market market = MarketOperartion.insertMarket(collection, instrument);
+                NinjaTrader.Code.Output.Process("[readMarketId] Result:" + market, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
                 return market.Id;
                
             } else
             {
-                UpdateOptions options = new UpdateOptions();
-                options.IsUpsert = true;
-                FilterDefinition<Market> filter = Builders<Market>.Filter.Eq(Market.Field.MARKET_ID.ToString(), instrument.MasterInstrument.Name);
-                UpdateDefinition<Market> definition = createMarketUpdateDefinition(result.First(), instrument.MasterInstrument);
-                UpdateResult r = collection.UpdateOne(filter, definition, options);
-                NinjaTrader.Code.Output.Process(" Update Result:" + r.ModifiedCount, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                UpdateResult r = MarketOperartion.updateMarket(collection, filter, instrument, result);
 
+                if( r != null )
+                {
+                    NinjaTrader.Code.Output.Process("[readMarketId] Update Result:" + r.ModifiedCount, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                }
+                    
                 return result.First().Id;
             }
         }
 
-
-
-        private static UpdateDefinition<Market> createMarketUpdateDefinition(Market market, MasterInstrument instrument)
-        {
-            UpdateDefinition<Market> definition = null;
-
-            if (!market.MarketId.Equals(instrument.Name))
-            {
-                definition = UpdateDefinitions<Market>.setUpdateDefinition(definition, Market.Field.MARKET_ID.ToString(), instrument.Name);
-
-            }
-
-            string currency = instrument.Currency.ToString();
-            if (!market.Currency.Equals(currency))
-            {
-                definition = UpdateDefinitions<Market>.setUpdateDefinition(definition, Market.Field.CURRENCY.ToString(), currency);
-            }
-
-            if (!market.Description.Equals(instrument.Description))
-            {
-                definition = UpdateDefinitions<Market>.setUpdateDefinition(definition, Market.Field.DESCRIPTION.ToString(), instrument.Description);
-            }
-
-            string type = instrument.InstrumentType.ToString();
-            if (!market.Type.Equals(type))
-            {
-                definition = UpdateDefinitions<Market>.setUpdateDefinition(definition, Market.Field.TYPE.ToString(), type);
-            }
-
-            double ticksize = instrument.TickSize;
-            if (market.TickSize != ticksize)
-            {
-                definition = UpdateDefinitions<Market>.setUpdateDefinition(definition, Market.Field.TICK_SIZE.ToString(), ticksize);
-            }
-
-            if (market.PointValue != instrument.PointValue)
-            {
-                UpdateDefinitions<Market>.setUpdateDefinition(definition, Market.Field.POINT_VALUE.ToString(), instrument.PointValue);
-            }
-
-            return definition;
-        }
-
         
+
+
+        public static ObjectId readContractId(MongoClient connection, string dbName, ObjectId marketId, Instrument instrument)
+        {
+            NinjaTrader.Code.Output.Process("[readContractId] Connection:" + connection + "DB = " + dbName + "marketId = " + marketId.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+
+            IMongoDatabase db = connection.GetDatabase(dbName);
+            IMongoCollection<Contracts> collection = db.GetCollection<Contracts>(MongoDBTable.CONTRACTS.ToString());
+            /*Filter*/
+            FilterDefinition<Contracts> marketIdFilter = Builders<Contracts>.Filter.Eq(Contracts.Field.MARKET_ID.ToString(), marketId);
+            FilterDefinition<Contracts> contractNameFilter = Builders<Contracts>.Filter.Eq(Contracts.Field.CONTRACT_NAME.ToString(), instrument.FullName);
+            FilterDefinition<Contracts> filter = Builders<Contracts>.Filter.And(marketIdFilter, contractNameFilter);
+
+            List <Contracts> result = collection.Find<Contracts>(filter).ToList();
+
+            if (result.Count == 0)
+            {
+
+
+                Contracts contract = ContractsOperation.insertContract(collection, marketId, instrument);
+                NinjaTrader.Code.Output.Process("[readContractId] Result:" + contract, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+
+                return contract.Id;
+
+            } else
+            {
+                UpdateResult r = ContractsOperation.updateContract(collection, filter, instrument, result);
+
+                if (r != null)
+                {
+                    NinjaTrader.Code.Output.Process("[readMarketId] Update Result:" + r.ModifiedCount, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                }
+
+                return result.First().Id;
+            }
+            
+        }
     }
 }

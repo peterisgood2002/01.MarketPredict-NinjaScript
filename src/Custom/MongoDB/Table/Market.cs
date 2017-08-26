@@ -15,7 +15,7 @@ namespace NinjaTrader.Custom.MongoDB.Table
     {
         public enum Field
         {
-            MARKET_ID,
+            MARKET_NAME,
             CURRENCY,
             DESCRIPTION,
             TICK_SIZE,
@@ -31,8 +31,8 @@ namespace NinjaTrader.Custom.MongoDB.Table
 
         public Market(string name, string currency, string desc, string type, double tickSize, double pointValue, string url)
         {
-            
-            MarketId = name;
+
+            MarketName = name;
             Currency = currency;
             Description = desc;
             Type = type;
@@ -44,7 +44,7 @@ namespace NinjaTrader.Custom.MongoDB.Table
         public ObjectId Id { get; set; }
 
        
-        public string MarketId
+        public string MarketName
         {
             get; set;
         }
