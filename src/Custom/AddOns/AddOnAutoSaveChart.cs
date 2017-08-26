@@ -191,7 +191,6 @@ namespace NinjaTrader.NinjaScript.AddOns
     public class AutoSaveChartWindow : NTWindow, IWorkspacePersistence
     {
         
-        private AddOnSaveChartTab tabPage = null;
         private AddOnAutoSaveChartFactory factory = null;
 
         public AutoSaveChartWindow()
@@ -300,7 +299,6 @@ namespace NinjaTrader.NinjaScript.AddOns
         TextBox txtOutputFolder = null;
         private AccountSelector accountSelector = null;
         TextBox txtLog = null;
-        String accountName = null;
 
         
 
