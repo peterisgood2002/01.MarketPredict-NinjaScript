@@ -31,6 +31,10 @@ using NinjaTrader.Core;
 using NinjaTrader.Custom.MongoDB;
 using MongoDB.Bson;
 using System.IO;
+using NinjaTrader.Custom.MongoDB.Table;
+using System.Threading;
+using System.Windows.Threading;
+using System.Collections;
 #endregion
 
 //This namespace holds Add ons in this folder and is required. Do not change it. 
@@ -215,7 +219,10 @@ namespace NinjaTrader.NinjaScript.AddOns
         CheckBox cbDownloadAll = null;
         XamDateTimeEditor beginDate = null;
         XamDateTimeEditor endDate = null;
-        Button startButton = null;
+        Button loadDateButton = null;
+        Button downloadToDBButton = null;
+        TextBox txtLog = null;
+
         public SaveMarketReplayToDBTab()
         {
             NinjaTrader.Code.Output.Process("SaveMarketReplayToDBTab.SaveMarketReplayToDBTab", NinjaTrader.NinjaScript.PrintTo.OutputTab1);
@@ -249,70 +256,225 @@ namespace NinjaTrader.NinjaScript.AddOns
                         instrument.InstrumentChanged += OnInstrumentChanged;
 
                     cbDownloadAll = LogicalTreeHelper.FindLogicalNode(pageContent, "downloadAll") as CheckBox;
-                    beginDate = LogicalTreeHelper.FindLogicalNode(pageContent, "beginDate") as XamDateTimeEditor;
+                    loadDateButton = LogicalTreeHelper.FindLogicalNode(pageContent, "loadButton") as Button;
+                    loadDateButton.Click += OnLoadButtonClick;
 
+                    beginDate = LogicalTreeHelper.FindLogicalNode(pageContent, "beginDate") as XamDateTimeEditor;
                     endDate = LogicalTreeHelper.FindLogicalNode(pageContent, "endDate") as XamDateTimeEditor;
 
-                    startButton = LogicalTreeHelper.FindLogicalNode(pageContent, "startButton") as Button;
-                    startButton.Click += OnStartButtonClick;
+                    downloadToDBButton = LogicalTreeHelper.FindLogicalNode(pageContent, "downloadToDBButton") as Button;
+                    downloadToDBButton.Click += OnDownloadToDBButtonClick;
+
+                    txtLog = LogicalTreeHelper.FindLogicalNode(pageContent, "outputBox") as TextBox;
                 }
 
                 return pageContent;
             }
         }
 
-        private void OnStartButtonClick(object sender, RoutedEventArgs e)
+        private MongoClient connection = null;
+        private void OnDownloadToDBButtonClick(object sender, RoutedEventArgs e)
         {
+
             #region Right Code
             MongoDBMethod.registerClass();
-            MongoClient connection = new MongoClient(connectionString);
+            MongoClient connection = new MongoClient(txtConnStr.Text);
 
-            ObjectId marketId = MongoDBMethod.readMarketId(connection, database, Instrument);
+            //1. Create and read market name
+            string marketName = MongoDBMethod.readMarketId(connection, database, Instrument);
 
+            //2. Create and read contract
             if (cbDownloadAll.IsChecked == true)
             {
                 //TODO Perform download all
             }
             else
             {
-                ObjectId contractId = MongoDBMethod.readContractId(connection, database, marketId, Instrument);
+                //1. load beginDate and endDate if needed
+                if (beginDate.Value == null || endDate.Value == null || !instrumentHasLoaded.Equals(Instrument.FullName))
+                {
+                    loadDate(marketName);
+                }
+
+                DateTime begin = (DateTime)beginDate.Value;
+                DateTime expiry = (DateTime)endDate.Value;
+
+                MongoDBMethod.readContract(connection, database, marketName, Instrument, begin, expiry);
+             
             }
             #endregion
 
-            #region Save Historical data from server
-            //foreach (Connection c in Connection.Connections)
+            //3. Create thread to download MarketReplay Data to database
+            //NinjaTrader.Code.Output.Process(String.Format("ContractMonth:{0} ", Instrument.MarketData), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            
+            //Dispatcher.InvokeAsync(new Action(() =>
             //{
+            //    MarketReplay.DumpMarketDepth(Instrument, new DateTime(2017, 8, 31), new DateTime(2017, 9, 1), tempLocation);
 
-            //    HdsClient client = typeof(Connection).GetProperty("HistoricalDataClient", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(c) as HdsClient;
-            //    NinjaTrader.Code.Output.Process(String.Format("Hds:{0} ", client), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            //    using (FileStream stream = File.OpenRead(tempLocation))
+            //    {
+            //        NinjaTrader.Code.Output.Process(String.Format("Test exist:{0} ", File.Exists(tempLocation)), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
 
-            //    Action<NinjaTrader.Cbi.ErrorCode, string, object> callback = MarketReplayCallBack;
-            //    client.RequestMarketReplay(Instrument, new DateTime(2016, 5, 23), callback, null, null);
-
-
-            //}
-            #endregion Save Historical data from server
-            NinjaTrader.Code.Output.Process(String.Format("ContractMonth:{0} ", Instrument.MarketData), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-            //foreach (var a in Instrument.MasterInstrument.RolloverCollection) {
-            //    NinjaTrader.Code.Output.Process("=================", NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-            //    NinjaTrader.Code.Output.Process(String.Format("ContractMonth:{0} ", a.ContractMonth), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-            //    NinjaTrader.Code.Output.Process(String.Format("Date:{0} ", a.Date), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-            //    NinjaTrader.Code.Output.Process(String.Format("Offset:{0} ", a.Offset), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-            //}
-            MarketReplay.DumpMarketDepth(Instrument, new DateTime(2017, 3, 6), new DateTime(2017, 3, 6), tempLocation);
+            //    }
+                
+            //}), DispatcherPriority.SystemIdle);
             //NinjaTrader.Code.Output.Process("Date=" + new DateTime(2017, 3, 9), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
         }
+
+        double total = 0;
+        int datalength = 0;
+        //private void loadHistoricalData(DateTime begin, DateTime end)
+        //{
+        //    datalength = 0;
+        //    foreach (Connection c in Connection.Connections)
+        //    {
+
+        //        HdsClient client = typeof(Connection).GetProperty("HistoricalDataClient", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(c) as HdsClient;
+        //        NinjaTrader.Code.Output.Process(String.Format("Hds:{0} ", client), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+
+        //        Action<NinjaTrader.Cbi.ErrorCode, string, object> callback = MarketReplayCallBack;
+        //        DateTime index = begin;
+        //        total = (end - begin).TotalDays;
+        //        while (index.CompareTo(end) <= 0)
+        //        {
+        //            client.RequestMarketReplay(Instrument, index, callback, null, index);
+        //            index = index.AddDays(1);
+        //        }
+
+        //    }
+
+            
+        //}
+
         private void MarketReplayCallBack(NinjaTrader.Cbi.ErrorCode error, string str, object obj)
         {
-            NinjaTrader.Code.Output.Process(String.Format("Error:{0}  {1}, {2}", error,str, obj), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-        }
-        private void OnInstrumentChanged(object sender, EventArgs e)
-        {
-            Instrument = sender as Cbi.Instrument;
-            NinjaTrader.Code.Output.Process("OnInstrumentChanged(): " + Instrument.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-            
+            NinjaTrader.Code.Output.Process(String.Format("Error:{0}  str = {1}, obj = {2}, {3} / {4}", error,str, obj, datalength, total), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            DateTime date = (DateTime)obj;
+
+            if( endDate.Equals(date))
+            {
+                txtLog.AppendText("Load MarketReplay successfully.");
+            }
         }
 
+        private string instrumentHasLoaded = "";
+        private void OnInstrumentChanged(object sender, EventArgs e)
+        {
+            if( Instrument != null )
+            {
+                instrumentHasLoaded = Instrument.FullName;
+            }
+            
+            NinjaTrader.Code.Output.Process("OnInstrumentChanged() OldInstrument: " + instrumentHasLoaded, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+
+            Instrument = sender as Cbi.Instrument;
+        }
+
+         private void OnLoadButtonClick(object sender, RoutedEventArgs e)
+        {
+            loadDate();
+        }
+
+     
+        private void loadDate(string marketName = null)
+        {
+
+            //1. Load Date from C:\Users\Peter12\Documents\NinjaTrader 8
+            string profile = Environment.GetEnvironmentVariable("USERPROFILE");
+            string dbLocation = profile + "\\Documents\\NinjaTrader 8\\db\\replay\\" + Instrument.FullName + "\\";
+            string[] files = Directory.GetFiles(dbLocation);
+            Array.Sort(files);
+
+            beginDate.Value = parseDate(files[0]);
+            endDate.Value = parseDate(files[ files.Length - 1]);
+            
+            instrumentHasLoaded = Instrument.FullName;
+        }
+
+        //private string exportLastData(Instrument instrument)
+        //{
+        //    HistoricalData historical = new HistoricalData();
+
+        //    Type type = typeof(HistoricalData);
+        //    FieldInfo info = type.GetField("cbxInsSelExport", BindingFlags.NonPublic | BindingFlags.Instance);
+        //    if (info != null)
+        //    {
+        //        ComboBox cbxInstrument = info.GetValue(historical) as ComboBox;
+        //        cbxInstrument.Text = instrument.FullName;
+        //    }
+
+        //    info = type.GetField("dtpExportFrom", BindingFlags.NonPublic | BindingFlags.Instance);
+        //    if (info != null)
+        //    {
+        //        XamDateTimeEditor startDate = info.GetValue(historical) as XamDateTimeEditor;
+
+        //        startDate.Value = Instrument.Expiry.AddYears(-8);
+        //    }
+
+        //    info = type.GetField("dtpExportTo", BindingFlags.NonPublic | BindingFlags.Instance);
+        //    if (info != null)
+        //    {
+        //        XamDateTimeEditor endDate = info.GetValue(historical) as XamDateTimeEditor;
+
+        //        endDate.Value = Instrument.Expiry.AddYears(8);
+        //    }
+
+        //    info = type.GetField("cboExportInterval", BindingFlags.NonPublic | BindingFlags.Instance);
+        //    if (info != null)
+        //    {
+        //        ComboBox cbxInterval = info.GetValue(historical) as ComboBox;
+
+        //        cbxInterval.Text = "Day";
+        //    }
+
+        //    info = type.GetField("cboExportDataType", BindingFlags.NonPublic | BindingFlags.Instance);
+        //    if (info != null)
+        //    {
+        //        ComboBox cbxType = info.GetValue(historical) as ComboBox;
+
+        //        cbxType.Text = "Last";
+        //    }
+
+
+        //    info = type.GetField("btnExport", BindingFlags.NonPublic | BindingFlags.Instance);
+        //    if (info != null)
+        //    {
+        //        Button btnExport = info.GetValue(historical) as Button;
+
+        //        MethodInfo method = typeof(Button).GetMethod("OnClick", BindingFlags.NonPublic | BindingFlags.Instance);
+        //        if (method != null)
+        //        {
+        //            method.Invoke(btnExport, null);
+        //        }
+
+        //    }
+
+        //    info = type.GetField("exportFileName", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        //    if (info != null)
+        //    {
+        //        string file = info.GetValue(historical) as string;
+
+        //        return file;
+
+
+
+        //    } else
+        //    {
+        //        return "";
+        //    }
+        //}
+
+        private DateTime parseDate(string line )
+        {
+            int length = line.LastIndexOf('.') - line.LastIndexOf("\\") - 1;
+            string firstFile = line.Substring(line.LastIndexOf("\\") + 1, length);
+
+            DateTime date = DateTime.ParseExact(firstFile, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+            return date;
+
+            
+        }
         public Instrument Instrument
         {
             get;

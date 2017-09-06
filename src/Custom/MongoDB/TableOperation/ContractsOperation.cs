@@ -12,17 +12,35 @@ namespace NinjaTrader.Custom.MongoDB.TableOperation
 {
     class ContractsOperation
     {
-        public static Contracts insertContract(IMongoCollection<Contracts> collection, ObjectId marketId, Instrument instrument)
+        public static Contracts insertContract(IMongoCollection<Contracts> collection, string marketName, Instrument instrument)
         {
             Rollover data = getRollOverInformation(instrument);
 
-            Contracts contract = new Contracts( marketId, instrument.FullName, data.Date, data.Offset);
+            Contracts contract = new Contracts(marketName, instrument.FullName, data.Date, data.Offset);
 
-            collection.InsertOne(contract);
-            
+            insertContract(collection, contract);
+
             return contract;
         }
 
+        public static Contracts insertContract(IMongoCollection<Contracts> collection, string marketName, Instrument instrument, DateTime beginDate, DateTime expiryDate)
+        {
+            Rollover data = getRollOverInformation(instrument);
+
+            Contracts contract = new Contracts(marketName, instrument.FullName, data.Date, data.Offset);
+
+            contract.BeginDate = beginDate;
+            contract.ExpiryDate = expiryDate;
+
+            insertContract(collection, contract);
+
+            return contract;
+        }
+
+        private static void insertContract(IMongoCollection<Contracts> collection, Contracts contract)
+        {
+            collection.InsertOne(contract);
+        }
         public static Rollover getRollOverInformation(Instrument instrument)
         {
             Rollover result = null;
@@ -40,46 +58,74 @@ namespace NinjaTrader.Custom.MongoDB.TableOperation
             return result;
         }
 
-        public static UpdateResult updateContract(IMongoCollection<Contracts> collection, FilterDefinition<Contracts> filter, Instrument instrument, List<Contracts> result) 
+        public static UpdateResult updateContract(IMongoCollection<Contracts> collection, FilterDefinition<Contracts> filter, Instrument instrument, Contracts result)
         {
             UpdateOptions options = new UpdateOptions();
             options.IsUpsert = true;
 
-            UpdateDefinition<Contracts> definition = createContractUpdateDefinition(result.First(), instrument);
-            
-            if( definition != null )
-            {
-                UpdateResult r = collection.UpdateOne(filter, definition, options);
+            UpdateDefinition<Contracts> definition = createContractUpdateDefinition(result, instrument);
 
-                return r;
-            } else
-            {
-                return null;
-            }
-        } 
+            return updateContract(collection, filter, options, definition);
+        }
+
+        public static UpdateResult updateContract(IMongoCollection<Contracts> collection, FilterDefinition<Contracts> filter, Instrument instrument, Contracts result, DateTime beginDate, DateTime expiryDate)
+        {
+            UpdateOptions options = new UpdateOptions();
+            options.IsUpsert = true;
+
+            UpdateDefinition<Contracts> definition = createContractUpdateDefinition(result, instrument, beginDate, expiryDate);
+
+            return updateContract(collection, filter, options, definition);
+        }
 
         private static UpdateDefinition<Contracts> createContractUpdateDefinition(Contracts contract, Instrument instrument)
         {
             UpdateDefinition<Contracts> definition = null;
 
-            if( contract.ContractName == null || !contract.ContractName.Equals( instrument.FullName))
-            {
-                definition = UpdateDefinitions<Contracts>.setUpdateDefinition(definition, Contracts.Field.CONTRACT_NAME.ToString(), instrument.FullName);
-            }
-
-
             //RollOver information
             Rollover rollover = getRollOverInformation(instrument);
-            if (contract.RollDate == null || !contract.RollDate.Equals( rollover.Date))
+            if (contract.RollDate == null || !contract.RollDate.Equals(rollover.Date))
             {
-                definition = UpdateDefinitions<Contracts>.setUpdateDefinition(definition, Contracts.Field.ROLL_DATE.ToString(), rollover.Date);
+                definition = Definitions<Contracts>.setUpdateDefinition(definition, Contracts.Field.ROLL_DATE.ToString(), rollover.Date);
             }
 
             if (contract.RollOffset != rollover.Offset)
             {
-                definition = UpdateDefinitions<Contracts>.setUpdateDefinition(definition, Contracts.Field.ROLL_OFFSET.ToString(), rollover.Offset);
+                definition = Definitions<Contracts>.setUpdateDefinition(definition, Contracts.Field.ROLL_OFFSET.ToString(), rollover.Offset);
+            }
+
+            
+            return definition;
+        }
+
+        private static UpdateDefinition<Contracts> createContractUpdateDefinition(Contracts contract, Instrument instrument, DateTime beginDate, DateTime expiryDate)
+        {
+            UpdateDefinition<Contracts> definition = createContractUpdateDefinition(contract, instrument);
+
+            if(contract.BeginDate == null || !contract.BeginDate.Equals( beginDate) )
+            {
+                definition = Definitions<Contracts>.setUpdateDefinition(definition, Contracts.Field.BEGIN_DATE.ToString(), beginDate);
+            }
+
+            if (contract.ExpiryDate == null || !contract.ExpiryDate.Equals(expiryDate))
+            {
+                definition = Definitions<Contracts>.setUpdateDefinition(definition, Contracts.Field.EXPIRE_DATE.ToString(), expiryDate);
             }
             return definition;
+        }
+
+        private static UpdateResult updateContract(IMongoCollection<Contracts> collection, FilterDefinition<Contracts> filter, UpdateOptions options, UpdateDefinition<Contracts> definition)
+        {
+            if (definition != null)
+            {
+                UpdateResult r = collection.UpdateOne(filter, definition, options);
+
+                return r;
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

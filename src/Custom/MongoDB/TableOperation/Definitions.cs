@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace NinjaTrader.Custom.MongoDB.TableOperation
 {
-    class UpdateDefinitions<Type>
+    class Definitions<Type>
     {
         public static UpdateDefinition<Type> setUpdateDefinition(UpdateDefinition<Type> definition, string field, object value)
         {
@@ -22,6 +22,11 @@ namespace NinjaTrader.Custom.MongoDB.TableOperation
             }
 
             return definition;
+        }
+
+        public static FilterDefinition<Type> generateIdFilter<Field>(Field id)
+        {
+            return Builders<Type>.Filter.Eq("_id", id);
         }
     }
 }

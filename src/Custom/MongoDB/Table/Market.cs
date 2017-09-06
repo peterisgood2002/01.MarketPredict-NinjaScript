@@ -11,11 +11,10 @@ using MongoDB.Bson.Serialization;
 namespace NinjaTrader.Custom.MongoDB.Table
 {
     
-    class Market 
+    public class Market 
     {
         public enum Field
         {
-            MARKET_NAME,
             CURRENCY,
             DESCRIPTION,
             TICK_SIZE,
@@ -31,8 +30,7 @@ namespace NinjaTrader.Custom.MongoDB.Table
 
         public Market(string name, string currency, string desc, string type, double tickSize, double pointValue, string url)
         {
-
-            MarketName = name;
+            Id = name;
             Currency = currency;
             Description = desc;
             Type = type;
@@ -41,15 +39,10 @@ namespace NinjaTrader.Custom.MongoDB.Table
             Url = url;
            
         }
-        public ObjectId Id { get; set; }
 
-       
-        public string MarketName
-        {
-            get; set;
-        }
+        [BsonId]
+        public string Id { get; set; }
 
-       
         public string Currency
         {
             get; set;

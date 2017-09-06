@@ -10,6 +10,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
 			<RowDefinition Height="Auto" />
+			<RowDefinition Height="Auto" />
 			<RowDefinition Height="400" />
         </Grid.RowDefinitions>
 		<!--Grid for Save Chart Setting-->
@@ -61,8 +62,6 @@
 			</Grid>
 		</Grid>
         
-        
-		
 		<!--Grid for Save Chart Setting-->
 		<Grid Tag="START" Background="Transparent" Grid.Row="1" >
 			<Grid.ColumnDefinitions>
@@ -72,14 +71,48 @@
 				<ColumnDefinition Width="Auto" />
 				<ColumnDefinition Width="Auto" />
 				<ColumnDefinition Width="Auto" />
-				<ColumnDefinition Width="Auto" />
+				
             </Grid.ColumnDefinitions>
 			<t:InstrumentSelector	x:Name="instrumentSelector"  Grid.Column="0" LastUsedGroup="AddOnFramework">
 					<t:InstrumentSelector.Margin>
 						<Thickness Left="{StaticResource MarginBase}" Top="{StaticResource PaddingColumn}" Bottom="0"/>
 					</t:InstrumentSelector.Margin>
 			</t:InstrumentSelector>
-			<CheckBox x:Name="downloadAll"  Grid.Column="1"  > 
+			
+			<TextBlock Text=" Contract begins from: " Grid.Column="1" Style="{StaticResource FontLabel}" FontWeight="Bold">
+				<TextBlock.Margin>
+					<Thickness Left="{StaticResource MarginBase}" Top="{StaticResource MarginBase}" Right="{StaticResource MarginBase}" Bottom="0" />
+				</TextBlock.Margin>
+			</TextBlock>
+			<ie:XamDateTimeEditor x:Name = "beginDate" Grid.Column="2"  IsAlwaysInEditMode="True" MinWidth="150" Mask="{}{date}"> 
+				<ie:XamDateTimeEditor.Margin>
+					<Thickness Left="{StaticResource MarginBase}" Top="{StaticResource MarginBase}"/>
+				</ie:XamDateTimeEditor.Margin>
+			</ie:XamDateTimeEditor>
+			<TextBlock Text=" ends to: " Grid.Column="3" Style="{StaticResource FontLabel}" FontWeight="Bold">
+				<TextBlock.Margin>
+					<Thickness Left="{StaticResource MarginBase}" Top="{StaticResource MarginBase}" Right="{StaticResource MarginBase}" Bottom="0" />
+				</TextBlock.Margin>
+			</TextBlock>
+			<ie:XamDateTimeEditor x:Name = "endDate" Grid.Column="4"  IsAlwaysInEditMode="True" MinWidth="150" Mask="{}{date}"> 
+				<ie:XamDateTimeEditor.Margin>
+					<Thickness Left="{StaticResource MarginBase}" Top="{StaticResource MarginBase}"/>
+				</ie:XamDateTimeEditor.Margin>
+			</ie:XamDateTimeEditor>
+			
+			<Button x:Name="loadButton" Grid.Column="5" Content="Load Period Date">
+				<Button.Margin>
+					<Thickness Left="{StaticResource MarginButtonLeft}" Top="{StaticResource MarginBase}"/>
+				</Button.Margin>
+			</Button>
+			
+        </Grid>
+        <Grid Tag="START" Background="Transparent" Grid.Row="2" >
+			<Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+			<CheckBox x:Name="downloadAll"  Grid.Column="0"  > 
 				<TextBlock>
                      Download All Data  
                 </TextBlock>
@@ -87,36 +120,14 @@
 					<Thickness Left="{StaticResource MarginBase}" Top="{StaticResource MarginBase}"/>
 				</CheckBox.Margin>
 			</CheckBox>
-			<TextBlock Text="From: " Grid.Column="2" Style="{StaticResource FontLabel}" FontWeight="Bold">
-				<TextBlock.Margin>
-					<Thickness Left="{StaticResource MarginBase}" Top="{StaticResource MarginBase}" Right="{StaticResource MarginBase}" Bottom="0" />
-				</TextBlock.Margin>
-			</TextBlock>
-			<ie:XamDateTimeEditor x:Name = "beginDate" Grid.Column="3"  IsAlwaysInEditMode="True" MinWidth="150" Mask="{}{date}"> 
-				<ie:XamDateTimeEditor.Margin>
-					<Thickness Left="{StaticResource MarginBase}" Top="{StaticResource MarginBase}"/>
-				</ie:XamDateTimeEditor.Margin>
-			</ie:XamDateTimeEditor>
-			<TextBlock Text="To: " Grid.Column="4" Style="{StaticResource FontLabel}" FontWeight="Bold">
-				<TextBlock.Margin>
-					<Thickness Left="{StaticResource MarginBase}" Top="{StaticResource MarginBase}" Right="{StaticResource MarginBase}" Bottom="0" />
-				</TextBlock.Margin>
-			</TextBlock>
-			<ie:XamDateTimeEditor x:Name = "endDate" Grid.Column="5"  IsAlwaysInEditMode="True" MinWidth="150" Mask="{}{date}"> 
-				<ie:XamDateTimeEditor.Margin>
-					<Thickness Left="{StaticResource MarginBase}" Top="{StaticResource MarginBase}"/>
-				</ie:XamDateTimeEditor.Margin>
-			</ie:XamDateTimeEditor>
-			<Button x:Name="startButton" Grid.Column="6" Content="Start">
+			<Button x:Name="downloadToDBButton" Grid.Column="1" Content="Download To Database">
 				<Button.Margin>
-                <Thickness Left="{StaticResource MarginButtonLeft}" Top="{StaticResource MarginBase}"/>
+					<Thickness Left="{StaticResource MarginButtonLeft}" Top="{StaticResource MarginBase}"/>
 				</Button.Margin>
 			</Button>
-        </Grid>
-        
-
+		</Grid>	
 		<!-- Right side output box -->
-        <TextBox x:Name="outputBox" Margin="{Binding Source={StaticResource MarginBase}}" Grid.Row="2" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+        <TextBox x:Name="outputBox" Margin="{Binding Source={StaticResource MarginBase}}" Grid.Row="3" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
         <!--<Grid Background="Transparent" Grid.Row="1">
             --><!-- Define our layout as two columns. Left side will be all of our controls. Right side will be our output box --><!--
             <Grid.ColumnDefinitions>

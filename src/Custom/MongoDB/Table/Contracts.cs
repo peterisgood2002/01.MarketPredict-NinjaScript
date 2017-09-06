@@ -8,12 +8,11 @@ using System.Threading.Tasks;
 
 namespace NinjaTrader.Custom.MongoDB.Table
 {
-    class Contracts
+    public class Contracts
     {
         public enum Field
         {
-            MARKET_ID,
-            CONTRACT_NAME,
+            
             BEGIN_DATE,
             EXPIRE_DATE,
             ROLL_DATE,
@@ -25,25 +24,30 @@ namespace NinjaTrader.Custom.MongoDB.Table
 
         }
         
-        public Contracts(ObjectId marketId, string contractname, DateTime rolldate, double rolloffset)
+        public Contracts(string marketName, string contractname, DateTime rolldate, double rolloffset)
         {
-            MarketId = marketId;
-            ContractName = contractname;
+
+            Id = new ContractsId(marketName, contractname);
+            
             RollDate = rolldate;
             RollOffset = rolloffset;
             
         }
-        public ObjectId Id { get; set; }
 
-        public ObjectId MarketId
+        public class ContractsId
         {
-            get; set;
+            public string MarketName { get; set; }
+            public string ContractName { get; set; }
+
+            public ContractsId(string market, string contract)
+            {
+                MarketName = market;
+                ContractName = contract;
+            }
         }
 
-        public string ContractName
-        {
-            get; set;
-        }
+        [BsonId]
+        public ContractsId Id { get; set; }
 
         [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
         public DateTime BeginDate
@@ -66,5 +70,6 @@ namespace NinjaTrader.Custom.MongoDB.Table
         {
             get; set;
         }
+       
     }
 }
