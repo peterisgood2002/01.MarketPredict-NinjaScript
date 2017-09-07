@@ -71,7 +71,7 @@
 				<ColumnDefinition Width="Auto" />
 				<ColumnDefinition Width="Auto" />
 				<ColumnDefinition Width="Auto" />
-				
+				<ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 			<t:InstrumentSelector	x:Name="instrumentSelector"  Grid.Column="0" LastUsedGroup="AddOnFramework">
 					<t:InstrumentSelector.Margin>
@@ -101,6 +101,11 @@
 			</ie:XamDateTimeEditor>
 			
 			<Button x:Name="loadButton" Grid.Column="5" Content="Load Period Date">
+				<Button.Margin>
+					<Thickness Left="{StaticResource MarginButtonLeft}" Top="{StaticResource MarginBase}"/>
+				</Button.Margin>
+			</Button>
+			<Button x:Name="loadMarketReplayButton" Grid.Column="6" Content="Load MarketReplay">
 				<Button.Margin>
 					<Thickness Left="{StaticResource MarginButtonLeft}" Top="{StaticResource MarginBase}"/>
 				</Button.Margin>

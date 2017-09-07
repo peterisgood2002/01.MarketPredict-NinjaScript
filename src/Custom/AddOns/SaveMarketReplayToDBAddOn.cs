@@ -35,6 +35,7 @@ using NinjaTrader.Custom.MongoDB.Table;
 using System.Threading;
 using System.Windows.Threading;
 using System.Collections;
+using NinjaTrader.Custom.Thread;
 #endregion
 
 //This namespace holds Add ons in this folder and is required. Do not change it. 
@@ -220,6 +221,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         XamDateTimeEditor beginDate = null;
         XamDateTimeEditor endDate = null;
         Button loadDateButton = null;
+        Button loadMarketReplayButton = null;
         Button downloadToDBButton = null;
         TextBox txtLog = null;
 
@@ -257,7 +259,10 @@ namespace NinjaTrader.NinjaScript.AddOns
 
                     cbDownloadAll = LogicalTreeHelper.FindLogicalNode(pageContent, "downloadAll") as CheckBox;
                     loadDateButton = LogicalTreeHelper.FindLogicalNode(pageContent, "loadButton") as Button;
-                    loadDateButton.Click += OnLoadButtonClick;
+                    loadDateButton.Click += OnLoadDateButtonClick;
+
+                    loadMarketReplayButton = LogicalTreeHelper.FindLogicalNode(pageContent, "loadMarketReplayButton") as Button;
+                    loadMarketReplayButton.Click += OnLoadMarketReplayButtonClick;
 
                     beginDate = LogicalTreeHelper.FindLogicalNode(pageContent, "beginDate") as XamDateTimeEditor;
                     endDate = LogicalTreeHelper.FindLogicalNode(pageContent, "endDate") as XamDateTimeEditor;
@@ -269,6 +274,63 @@ namespace NinjaTrader.NinjaScript.AddOns
                 }
 
                 return pageContent;
+            }
+        }
+
+        private void OnLoadDateButtonClick(object sender, RoutedEventArgs e)
+        {
+            loadDate();
+        }
+
+        private void loadDate(string marketName = null)
+        {
+
+            //1. Load Date from C:\Users\Peter12\Documents\NinjaTrader 8
+            string profile = Environment.GetEnvironmentVariable("USERPROFILE");
+            string dbLocation = profile + "\\Documents\\NinjaTrader 8\\db\\replay\\" + Instrument.FullName + "\\";
+            string[] files = Directory.GetFiles(dbLocation);
+            Array.Sort(files);
+
+            beginDate.Value = parseDate(files[0]);
+            endDate.Value = parseDate(files[files.Length - 1]);
+
+            instrumentHasLoaded = Instrument.FullName;
+        }
+        private void OnLoadMarketReplayButtonClick(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        double total = 0;
+        int datalength = 0;
+        private void loadHistoricalData(DateTime begin, DateTime end)
+        {
+            datalength = 0;
+            foreach (Connection c in Connection.Connections)
+            {
+
+                HdsClient client = typeof(Connection).GetProperty("HistoricalDataClient", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(c) as HdsClient;
+                NinjaTrader.Code.Output.Process(String.Format("Hds:{0} ", client), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+
+                Action<NinjaTrader.Cbi.ErrorCode, string, object> callback = MarketReplayCallBack;
+                DateTime index = begin;
+                total = (end - begin).TotalDays;
+                while (index.CompareTo(end) <= 0) 
+                {
+                    client.RequestMarketReplay(Instrument, index, callback, null, index);
+                    index = index.AddDays(1);
+                }
+            }
+        }
+
+        private void MarketReplayCallBack(NinjaTrader.Cbi.ErrorCode error, string str, object obj)
+        {
+            NinjaTrader.Code.Output.Process(String.Format("Error:{0}  str = {1}, obj = {2}, {3} / {4}", error, str, obj, datalength, total), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            DateTime date = (DateTime)obj;
+
+            if (endDate.Value.Equals(date))
+            {
+                txtLog.AppendText("Load MarketReplay successfully.");
             }
         }
 
@@ -284,6 +346,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             string marketName = MongoDBMethod.readMarketId(connection, database, Instrument);
 
             //2. Create and read contract
+            Contracts contract = null;
             if (cbDownloadAll.IsChecked == true)
             {
                 //TODO Perform download all
@@ -296,65 +359,20 @@ namespace NinjaTrader.NinjaScript.AddOns
                     loadDate(marketName);
                 }
 
+                //2. Store Contracts 
                 DateTime begin = (DateTime)beginDate.Value;
-                DateTime expiry = (DateTime)endDate.Value;
+                DateTime end = (DateTime)endDate.Value;
 
-                MongoDBMethod.readContract(connection, database, marketName, Instrument, begin, expiry);
-             
+                contract = MongoDBMethod.readContract(connection, database, marketName, Instrument, begin, end);
+
+                //3. Create thread to download MarketReplay Data to database
+                ThreadOperation.createThread(connection, contract, begin, end, tempLoc.Text);
+
             }
             #endregion
 
-            //3. Create thread to download MarketReplay Data to database
-            //NinjaTrader.Code.Output.Process(String.Format("ContractMonth:{0} ", Instrument.MarketData), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
             
-            //Dispatcher.InvokeAsync(new Action(() =>
-            //{
-            //    MarketReplay.DumpMarketDepth(Instrument, new DateTime(2017, 8, 31), new DateTime(2017, 9, 1), tempLocation);
-
-            //    using (FileStream stream = File.OpenRead(tempLocation))
-            //    {
-            //        NinjaTrader.Code.Output.Process(String.Format("Test exist:{0} ", File.Exists(tempLocation)), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-
-            //    }
-                
-            //}), DispatcherPriority.SystemIdle);
-            //NinjaTrader.Code.Output.Process("Date=" + new DateTime(2017, 3, 9), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-        }
-
-        double total = 0;
-        int datalength = 0;
-        //private void loadHistoricalData(DateTime begin, DateTime end)
-        //{
-        //    datalength = 0;
-        //    foreach (Connection c in Connection.Connections)
-        //    {
-
-        //        HdsClient client = typeof(Connection).GetProperty("HistoricalDataClient", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(c) as HdsClient;
-        //        NinjaTrader.Code.Output.Process(String.Format("Hds:{0} ", client), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-
-        //        Action<NinjaTrader.Cbi.ErrorCode, string, object> callback = MarketReplayCallBack;
-        //        DateTime index = begin;
-        //        total = (end - begin).TotalDays;
-        //        while (index.CompareTo(end) <= 0)
-        //        {
-        //            client.RequestMarketReplay(Instrument, index, callback, null, index);
-        //            index = index.AddDays(1);
-        //        }
-
-        //    }
-
             
-        //}
-
-        private void MarketReplayCallBack(NinjaTrader.Cbi.ErrorCode error, string str, object obj)
-        {
-            NinjaTrader.Code.Output.Process(String.Format("Error:{0}  str = {1}, obj = {2}, {3} / {4}", error,str, obj, datalength, total), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-            DateTime date = (DateTime)obj;
-
-            if( endDate.Equals(date))
-            {
-                txtLog.AppendText("Load MarketReplay successfully.");
-            }
         }
 
         private string instrumentHasLoaded = "";
@@ -370,26 +388,6 @@ namespace NinjaTrader.NinjaScript.AddOns
             Instrument = sender as Cbi.Instrument;
         }
 
-         private void OnLoadButtonClick(object sender, RoutedEventArgs e)
-        {
-            loadDate();
-        }
-
-     
-        private void loadDate(string marketName = null)
-        {
-
-            //1. Load Date from C:\Users\Peter12\Documents\NinjaTrader 8
-            string profile = Environment.GetEnvironmentVariable("USERPROFILE");
-            string dbLocation = profile + "\\Documents\\NinjaTrader 8\\db\\replay\\" + Instrument.FullName + "\\";
-            string[] files = Directory.GetFiles(dbLocation);
-            Array.Sort(files);
-
-            beginDate.Value = parseDate(files[0]);
-            endDate.Value = parseDate(files[ files.Length - 1]);
-            
-            instrumentHasLoaded = Instrument.FullName;
-        }
 
         //private string exportLastData(Instrument instrument)
         //{
