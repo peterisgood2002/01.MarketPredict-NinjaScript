@@ -12,7 +12,9 @@ namespace NinjaTrader.Custom.MongoDB
     enum MongoDBTable
     {
         MARKET,
-        CONTRACTS
+        CONTRACTS,
+        L1_PRICE,
+        L2_PRICE
     }
     class MongoDBMethod
     {
@@ -91,7 +93,7 @@ namespace NinjaTrader.Custom.MongoDB
 
         public static Contracts readContract(MongoClient connection, string dbName, string marketName, Instrument instrument, DateTime beginDate, DateTime expiryDate)
         {
-            NinjaTrader.Code.Output.Process("[readContractId] Connection:" + connection + "DB = " + dbName + "marketName = " + marketName.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            NinjaTrader.Code.Output.Process("[readContract] Connection:" + connection + "DB = " + dbName + " marketName = " + marketName.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
 
             IMongoDatabase db = connection.GetDatabase(dbName);
             IMongoCollection<Contracts> collection = db.GetCollection<Contracts>(MongoDBTable.CONTRACTS.ToString());
@@ -106,7 +108,7 @@ namespace NinjaTrader.Custom.MongoDB
 
 
                 Contracts contract = ContractsOperation.insertContract(collection, marketName, instrument, beginDate, expiryDate);
-                NinjaTrader.Code.Output.Process("[readContractId] Result:" + contract, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                NinjaTrader.Code.Output.Process("[readContract] Result:" + contract, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
 
                 return contract;
 
@@ -116,7 +118,7 @@ namespace NinjaTrader.Custom.MongoDB
 
                 if (r != null)
                 {
-                    NinjaTrader.Code.Output.Process("[readMarketId] Update Result:" + r.ModifiedCount, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                    NinjaTrader.Code.Output.Process("[readContract] Update Result:" + r.ModifiedCount, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
                 }
 
                 return result.First();
@@ -124,6 +126,54 @@ namespace NinjaTrader.Custom.MongoDB
             
         }
 
-        
+        public static IDictionary<DateTime, List<Figure>> searchPrice(MongoClient connection, string dbName, DateTime beginTime, DateTime endTime)
+        {
+            IMongoDatabase db = connection.GetDatabase(dbName);
+            IMongoCollection<L1Price> collection = db.GetCollection<L1Price>(MongoDBTable.L1_PRICE.ToString());
+            
+            FilterDefinition<L1Price> filter = Definitions<L1Price>.between(beginTime, endTime);
+            List<L1Price> data = collection.Find<L1Price>(filter).ToList();
+            IDictionary<DateTime, List<Figure>> result = new Dictionary<DateTime, List<Figure>>();
+            foreach(L1Price price in data)
+            {
+                List<Figure> val = new List<Figure>();
+                if( !result.TryGetValue(price.Id.Timestamp, out val))
+                {
+                    result.Add(price.Id.Timestamp, val);
+                }
+
+                val.Add(price);
+               
+            }
+
+            IMongoCollection<L2Price> collection2 = db.GetCollection<L2Price>(MongoDBTable.L2_PRICE.ToString());
+            FilterDefinition<L2Price> filter2 = Definitions<L2Price>.between(beginTime, endTime);
+            List<L2Price> data2 = collection2.Find<L2Price>(filter2).ToList();
+            foreach (L2Price price in data2)
+            {
+                List<Figure> val = new List<Figure>();
+                if (!result.TryGetValue(price.Id.Timestamp, out val))
+                {
+                    result.Add(price.Id.Timestamp, val);
+                }
+
+                val.Add(price);
+            }
+
+            return result;
+        }
+
+        public static void insertPrice(MongoClient connection, string dbName, List<Figure> data)
+        {
+            NinjaTrader.Code.Output.Process("[insertPrice] Connection:" + connection + "DB = " + dbName + " Data Length = " + data.Count, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+
+            IMongoDatabase db = connection.GetDatabase(dbName);
+
+            IMongoCollection<L1Price> l1Collection = db.GetCollection<L1Price>(MongoDBTable.L1_PRICE.ToString());
+
+            IMongoCollection<L2Price> l2Collection = db.GetCollection<L2Price>(MongoDBTable.L2_PRICE.ToString());
+
+            PriceOperation.insertPrice(l1Collection, l2Collection, data);
+        }
     }
 }

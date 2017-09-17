@@ -14,7 +14,7 @@ namespace NinjaTrader.Custom.MongoDB.Table
         {
             
             BEGIN_DATE,
-            EXPIRE_DATE,
+            EXPIRY_DATE,
             ROLL_DATE,
             ROLL_OFFSET
         }

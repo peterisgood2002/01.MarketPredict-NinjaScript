@@ -107,9 +107,9 @@ namespace NinjaTrader.Custom.MongoDB.TableOperation
                 definition = Definitions<Contracts>.setUpdateDefinition(definition, Contracts.Field.BEGIN_DATE.ToString(), beginDate);
             }
 
-            if (contract.ExpiryDate == null || !contract.ExpiryDate.Equals(expiryDate))
+            if (contract.ExpiryDate == null || contract.ExpiryDate.CompareTo(expiryDate) < 0)
             {
-                definition = Definitions<Contracts>.setUpdateDefinition(definition, Contracts.Field.EXPIRE_DATE.ToString(), expiryDate);
+                definition = Definitions<Contracts>.setUpdateDefinition(definition, Contracts.Field.EXPIRY_DATE.ToString(), expiryDate);
             }
             return definition;
         }

@@ -36,6 +36,7 @@ using System.Threading;
 using System.Windows.Threading;
 using System.Collections;
 using NinjaTrader.Custom.Thread;
+using NinjaTrader.Custom.DataOperation;
 #endregion
 
 //This namespace holds Add ons in this folder and is required. Do not change it. 
@@ -291,14 +292,20 @@ namespace NinjaTrader.NinjaScript.AddOns
             string[] files = Directory.GetFiles(dbLocation);
             Array.Sort(files);
 
-            beginDate.Value = parseDate(files[0]);
-            endDate.Value = parseDate(files[files.Length - 1]);
+            beginDate.Value = DataParser.parseDate(files[0]);
+            endDate.Value = DataParser.parseDate(files[files.Length - 1]);
 
             instrumentHasLoaded = Instrument.FullName;
         }
         private void OnLoadMarketReplayButtonClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            if( beginDate.Value == null || endDate.Value == null )
+            {
+                MessageBox.Show("You should set Date between which we dowload from server.");
+            } else
+            {
+                loadHistoricalData((DateTime)beginDate.Value, (DateTime)endDate.Value);
+            }
         }
 
         double total = 0;
@@ -334,7 +341,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             }
         }
 
-        private MongoClient connection = null;
+  
         private void OnDownloadToDBButtonClick(object sender, RoutedEventArgs e)
         {
 
@@ -366,13 +373,11 @@ namespace NinjaTrader.NinjaScript.AddOns
                 contract = MongoDBMethod.readContract(connection, database, marketName, Instrument, begin, end);
 
                 //3. Create thread to download MarketReplay Data to database
-                ThreadOperation.createThread(connection, contract, begin, end, tempLoc.Text);
+                ThreadOperation.createThread(connection, database, Instrument, contract, begin, end, tempLoc.Text);
 
             }
             #endregion
 
-            
-            
         }
 
         private string instrumentHasLoaded = "";
@@ -463,16 +468,7 @@ namespace NinjaTrader.NinjaScript.AddOns
         //    }
         //}
 
-        private DateTime parseDate(string line )
-        {
-            int length = line.LastIndexOf('.') - line.LastIndexOf("\\") - 1;
-            string firstFile = line.Substring(line.LastIndexOf("\\") + 1, length);
-
-            DateTime date = DateTime.ParseExact(firstFile, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
-            return date;
-
-            
-        }
+        
         public Instrument Instrument
         {
             get;
