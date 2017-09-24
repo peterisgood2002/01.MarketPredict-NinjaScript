@@ -139,6 +139,7 @@ namespace NinjaTrader.Custom.MongoDB
                 List<Figure> val = new List<Figure>();
                 if( !result.TryGetValue(price.Id.Timestamp, out val))
                 {
+                    val = new List<Figure>();
                     result.Add(price.Id.Timestamp, val);
                 }
 
@@ -154,6 +155,7 @@ namespace NinjaTrader.Custom.MongoDB
                 List<Figure> val = new List<Figure>();
                 if (!result.TryGetValue(price.Id.Timestamp, out val))
                 {
+                    val = new List<Figure>();
                     result.Add(price.Id.Timestamp, val);
                 }
 

@@ -1,9 +1,5 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NinjaTrader.Custom.MongoDB.Table
 {
@@ -12,13 +8,18 @@ namespace NinjaTrader.Custom.MongoDB.Table
      
         public L1Price(string market, string contract, DateTime time, int updateseq, string type, double price, double volume)
         {
-            Id = new FigureId(market, contract, time, updateseq);
+            Id = new FigureId(market, contract, time, updateseq, type, price);
 
-            setPrice(type, price, volume);
+            Volume = volume;
 
         }
         [BsonId]
         public FigureId Id { get; set; }
+        
+        public override string ToString()
+        {
+            return Id.ToString();
+        }
         
     }
 }

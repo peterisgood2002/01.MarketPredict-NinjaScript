@@ -1,10 +1,5 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+﻿using MongoDB.Bson.Serialization.Attributes;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NinjaTrader.Custom.MongoDB.Table
 {
@@ -29,38 +24,35 @@ namespace NinjaTrader.Custom.MongoDB.Table
             public DateTime Timestamp { get; set; }
 
             public int UpdateSeqno { get; set; }
-            public FigureId(string market, string contract, DateTime time, int updateSeq)
+
+            public string ContractDataType { get; set; }
+
+            public double Price
+            {
+                get; set;
+            }
+
+            public FigureId(string market, string contract, DateTime time, int updateSeq, string type, double price)
             {
                 
                 MarketName = market;
                 ContractName = contract;
-
+                ContractDataType = type;
                 Timestamp = time;
                 UpdateSeqno = updateSeq;
+                Price = price;
             }
-        }
 
-       
-
-        /*We flat CONTRACT_DATA_TYPE so this is not a key.*/
-        public string ContractDataType { get; set; }
-
-        public double Price
-        {
-            get; set;
+            public override string ToString()
+            {
+                return "MarketName = " + MarketName + " ContractName = " + ContractName + " ContractDataType = " + ContractDataType + 
+                    " Timestamp = " + Timestamp + "UpdateSeqno = " + UpdateSeqno;
+            }
         }
 
         public double Volume
         {
             get; set;
-        }
-
-        public void setPrice(string type, double price, double volume)
-        {
-            ContractDataType = type;
-            
-            Price = price;
-            Volume = volume;
         }
 
     }

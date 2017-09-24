@@ -1,40 +1,21 @@
 #region Using declarations
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Xml.Serialization;
 using NinjaTrader.Cbi;
 using NinjaTrader.Gui;
-using NinjaTrader.Gui.Chart;
-using NinjaTrader.Gui.SuperDom;
 using NinjaTrader.Gui.Tools;
 using NinjaTrader.Data;
-using NinjaTrader.NinjaScript;
-using NinjaTrader.Core.FloatingPoint;
-using NinjaTrader.Gui.Tools;
 using System.Xml.Linq;
 using System.Windows.Controls;
 using Infragistics.Windows.Editors;
-using NinjaTrader.Gui.Data;
 using MongoDB.Driver;
-using NinjaTrader.Gui.Tools.LoadingDialog;
 using NinjaTrader.Server;
 using System.Reflection;
-using NinjaTrader.Core;
 using NinjaTrader.Custom.MongoDB;
-using MongoDB.Bson;
 using System.IO;
 using NinjaTrader.Custom.MongoDB.Table;
-using System.Threading;
 using System.Windows.Threading;
-using System.Collections;
 using NinjaTrader.Custom.Thread;
 using NinjaTrader.Custom.DataOperation;
 #endregion
@@ -42,7 +23,7 @@ using NinjaTrader.Custom.DataOperation;
 //This namespace holds Add ons in this folder and is required. Do not change it. 
 namespace NinjaTrader.NinjaScript.AddOns
 {
-	public class SaveMarketReplayToDB : NinjaTrader.NinjaScript.AddOnBase
+    public class SaveMarketReplayToDB : NinjaTrader.NinjaScript.AddOnBase
 	{
         private NTMenuItem addOnFrameworkMenuItem;
         private NTMenuItem existingMenuItemInControlCenter;
@@ -372,14 +353,52 @@ namespace NinjaTrader.NinjaScript.AddOns
 
                 contract = MongoDBMethod.readContract(connection, database, marketName, Instrument, begin, end);
 
-                //3. Create thread to download MarketReplay Data to database
-                ThreadOperation.createThread(connection, database, Instrument, contract, begin, end, tempLoc.Text);
+                //3. Create threads to download MarketReplay Data to database
+                //ThreadManager.createThread(this, "testThread", BindingFlags.Public | BindingFlags.Static, false, begin, end);
+                //ThreadManager.createThread(this, "download", BindingFlags.Public | BindingFlags.Static, false, begin, end, 
+                //    connection, database, Instrument, contract, tempLoc.Text);
+                download(begin, end, connection, database, Instrument, contract, tempLoc.Text);
 
             }
             #endregion
 
         }
 
+        [ThreadMethod("download")]
+        public static void download(DateTime beginDate, DateTime endDate, MongoClient connection, string dbName, Instrument Instrument, Contracts contract, string tmpFolder)
+        {
+            NinjaTrader.Code.Output.Process("Begin = " + beginDate + " End = " + endDate, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+
+            beginDate = new DateTime(2017, 8, 31);
+            DateTime afterBeginDate = beginDate.AddDays(1);
+            Core.Globals.RandomDispatcher.BeginInvoke(new Action(() =>
+            {
+                string file = tmpFolder;
+                NinjaTrader.Code.Output.Process(String.Format("Dump Data: {0} Time={1} millisecond = {2} ", file, DateTime.Now, DateTime.Now.Ticks / 10000000), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                //MarketReplay.DumpMarketDepth(Instrument, beginDate, afterBeginDate, file);
+                DateTime firstDate = DataParser.parseDate(file, false);
+                DateTime lastDate = DataParser.parseDate(file, true);
+
+                NinjaTrader.Code.Output.Process("First Date of File" + file + " = " + firstDate, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                NinjaTrader.Code.Output.Process("Last Date of File" + file + " = " + lastDate, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                IDictionary<DateTime, List<Figure>> dataInDB = MongoDBMethod.searchPrice(connection, dbName, firstDate, lastDate);
+
+                NinjaTrader.Code.Output.Process(String.Format("Load Data: {0} Time={1} millisecond = {2}", file, DateTime.Now, DateTime.Now.Ticks / 10000000), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                List<Figure> data = DataParser.parse(contract.Id.MarketName, contract.Id.ContractName, file, dataInDB);
+                NinjaTrader.Code.Output.Process(String.Format("Finish Data: {0} Time={1} millisecond = {2}", file, DateTime.Now, DateTime.Now.Ticks / 10000000), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                MongoDBMethod.insertPrice(connection, dbName, data);
+
+
+            }), DispatcherPriority.SystemIdle);
+            NinjaTrader.Code.Output.Process("Date=" + new DateTime(2017, 3, 9), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+        }
+        [ThreadMethod("testThread")]
+        public static void testThread(DateTime begin , DateTime end)
+        {  
+
+           
+
+        }
         private string instrumentHasLoaded = "";
         private void OnInstrumentChanged(object sender, EventArgs e)
         {

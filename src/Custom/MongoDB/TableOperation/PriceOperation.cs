@@ -2,9 +2,6 @@
 using NinjaTrader.Custom.MongoDB.Table;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NinjaTrader.Custom.MongoDB.TableOperation
 {
@@ -30,13 +27,16 @@ namespace NinjaTrader.Custom.MongoDB.TableOperation
 
             if ( l1.Count > 0 )
             {
+
                 foreach (L1Price price in l1)
                 {
                     try
                     {
                         l1Collection.InsertOne(price);
-                    } catch ( Exception )
+                    } catch ( Exception ex)
                     {
+                        NinjaTrader.Code.Output.Process("[PriceOperation.insertPrice][Error] Level 1 :" + price.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                        throw ex;
                         // we do not throw any exception because we treat this execption as normal while we insert price to our database due to the duplication our Ninjascript will create
                     }
                     
@@ -53,8 +53,10 @@ namespace NinjaTrader.Custom.MongoDB.TableOperation
                     {
                         l2Collection.InsertOne(price);
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        NinjaTrader.Code.Output.Process("[PriceOperation.insertPrice][Error] Level 1 :" + price.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+                        throw ex;
                         // we do not throw any exception because we treat this execption as normal while we insert price to our database due to the duplication our Ninjascript will create
                     }
 
