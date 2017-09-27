@@ -6,7 +6,7 @@ namespace NinjaTrader.Custom.MongoDB.Table
     class L1Price : Figure
     {
      
-        public L1Price(string market, string contract, DateTime time, int updateseq, string type, double price, double volume)
+        public L1Price(string market, string contract, DateTime time, int updateseq, int type, double price, int volume)
         {
             Id = new FigureId(market, contract, time, updateseq, type, price);
 

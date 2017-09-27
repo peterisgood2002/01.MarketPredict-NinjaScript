@@ -17,22 +17,25 @@ namespace NinjaTrader.Custom.MongoDB.Table
 
         public class FigureId
         {
+            [BsonElementAttribute("M")]
             public string MarketName { get; set; }
+            [BsonElementAttribute("C")]
             public string ContractName { get; set; }
 
+            [BsonElementAttribute("T")]
             [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
             public DateTime Timestamp { get; set; }
-
+            [BsonElementAttribute("S")]
             public int UpdateSeqno { get; set; }
-
-            public string ContractDataType { get; set; }
-
+            [BsonElementAttribute("D")]
+            public int ContractDataType { get; set; }
+            [BsonElementAttribute("P")]
             public double Price
             {
                 get; set;
             }
 
-            public FigureId(string market, string contract, DateTime time, int updateSeq, string type, double price)
+            public FigureId(string market, string contract, DateTime time, int updateSeq, int type, double price)
             {
                 
                 MarketName = market;
@@ -49,8 +52,8 @@ namespace NinjaTrader.Custom.MongoDB.Table
                     " Timestamp = " + Timestamp + "UpdateSeqno = " + UpdateSeqno;
             }
         }
-
-        public double Volume
+        [BsonElementAttribute("V")]
+        public int Volume
         {
             get; set;
         }

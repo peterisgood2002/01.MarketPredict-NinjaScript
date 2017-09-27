@@ -19,17 +19,18 @@ namespace NinjaTrader.Custom.MongoDB.Table
 
         public class L2PriceId : FigureId
         {
+            [BsonElementAttribute("L")]
             public int priceLevel { get; set; }
+            [BsonElementAttribute("O")]
+            public int Operation { get; set; }
 
-            public string Operation { get; set; }
-
-            public L2PriceId(string market, string contract, DateTime time, int updateSeq, string type, string op, int level, double price) :base(market, contract, time, updateSeq, type, price)
+            public L2PriceId(string market, string contract, DateTime time, int updateSeq, int type, int op, int level, double price) :base(market, contract, time, updateSeq, type, price)
             {
                 priceLevel = level;
                 Operation = op;
             }
         }
-        public L2Price(string market, string contract, DateTime time, int updateSeq, string type, string op, int level, double price, double volume)
+        public L2Price(string market, string contract, DateTime time, int updateSeq, int type, int op, int level, double price, int volume)
         {
             Id = new L2PriceId(market, contract, time, updateSeq, type, op, level, price);
 

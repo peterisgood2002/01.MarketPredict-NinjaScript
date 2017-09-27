@@ -375,7 +375,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             {
                 string file = tmpFolder;
                 NinjaTrader.Code.Output.Process(String.Format("Dump Data: {0} Time={1} millisecond = {2} ", file, DateTime.Now, DateTime.Now.Ticks / 10000000), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-                //MarketReplay.DumpMarketDepth(Instrument, beginDate, afterBeginDate, file);
+                MarketReplay.DumpMarketDepth(Instrument, beginDate, afterBeginDate, file);
                 DateTime firstDate = DataParser.parseDate(file, false);
                 DateTime lastDate = DataParser.parseDate(file, true);
 
