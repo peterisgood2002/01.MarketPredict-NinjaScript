@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 
 namespace NinjaTrader.Custom.Thread
 {
+    /*
+       a ThreadMethod need to follow the argument constraint. 
+       This method has two arguments which mean beginIndex and endIndex following the other arguments
+    */
     public class ThreadMethod :Attribute
     {
         public string methodName { get; set; }

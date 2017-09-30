@@ -1,5 +1,6 @@
 ﻿using MongoDB.Driver;
 using NinjaTrader.Custom.MongoDB.Table;
+using NinjaTrader.Custom.Thread;
 using System;
 using System.Collections.Generic;
 
@@ -27,40 +28,14 @@ namespace NinjaTrader.Custom.MongoDB.TableOperation
 
             if ( l1.Count > 0 )
             {
-
-                foreach (L1Price price in l1)
-                {
-                    try
-                    {
-                        l1Collection.InsertOne(price);
-                    } catch ( Exception ex)
-                    {
-                        NinjaTrader.Code.Output.Process("[PriceOperation.insertPrice][Error] Level 1 :" + price.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-                        throw ex;
-                        // we do not throw any exception because we treat this execption as normal while we insert price to our database due to the duplication our Ninjascript will create
-                    }
-                    
-                }
-                
+                SaveManager.save<L1Price>(l1Collection, l1);  
             }
 
             NinjaTrader.Code.Output.Process("[PriceOperation.insertPrice] Level 2 :" + l2.Count, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
             if ( l2.Count > 0 )
             {
-                foreach (L2Price price in l2)
-                {
-                    try
-                    {
-                        l2Collection.InsertOne(price);
-                    }
-                    catch (Exception ex)
-                    {
-                        NinjaTrader.Code.Output.Process("[PriceOperation.insertPrice][Error] Level 1 :" + price.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-                        throw ex;
-                        // we do not throw any exception because we treat this execption as normal while we insert price to our database due to the duplication our Ninjascript will create
-                    }
-
-                }
+                SaveManager.save<L2Price>(l2Collection, l2);
+               
             }
            
         }

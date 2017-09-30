@@ -18,6 +18,7 @@ using NinjaTrader.Custom.MongoDB.Table;
 using System.Windows.Threading;
 using NinjaTrader.Custom.Thread;
 using NinjaTrader.Custom.DataOperation;
+using NinjaTrader.Custom.Log;
 #endregion
 
 //This namespace holds Add ons in this folder and is required. Do not change it. 
@@ -367,7 +368,8 @@ namespace NinjaTrader.NinjaScript.AddOns
         [ThreadMethod("download")]
         public static void download(DateTime beginDate, DateTime endDate, MongoClient connection, string dbName, Instrument Instrument, Contracts contract, string tmpFolder)
         {
-            NinjaTrader.Code.Output.Process("Begin = " + beginDate + " End = " + endDate, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            Logger.Log( "download", "Begin = " + beginDate, " End = " + endDate, "BEGIN");
+            
 
             beginDate = new DateTime(2017, 8, 31);
             DateTime afterBeginDate = beginDate.AddDays(1);
@@ -375,7 +377,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             {
                 string file = tmpFolder;
                 NinjaTrader.Code.Output.Process(String.Format("Dump Data: {0} Time={1} millisecond = {2} ", file, DateTime.Now, DateTime.Now.Ticks / 10000000), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-                MarketReplay.DumpMarketDepth(Instrument, beginDate, afterBeginDate, file);
+                //MarketReplay.DumpMarketDepth(Instrument, beginDate, afterBeginDate, file);
                 DateTime firstDate = DataParser.parseDate(file, false);
                 DateTime lastDate = DataParser.parseDate(file, true);
 
@@ -391,6 +393,7 @@ namespace NinjaTrader.NinjaScript.AddOns
 
             }), DispatcherPriority.SystemIdle);
             NinjaTrader.Code.Output.Process("Date=" + new DateTime(2017, 3, 9), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            Logger.Log("download", "Begin = " + beginDate, " End = " + endDate, "END");
         }
         [ThreadMethod("testThread")]
         public static void testThread(DateTime begin , DateTime end)
