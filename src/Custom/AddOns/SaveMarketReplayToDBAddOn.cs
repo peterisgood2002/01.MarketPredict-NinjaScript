@@ -248,8 +248,9 @@ namespace NinjaTrader.NinjaScript.AddOns
                     loadMarketReplayButton.Click += OnLoadMarketReplayButtonClick;
 
                     beginDate = LogicalTreeHelper.FindLogicalNode(pageContent, "beginDate") as XamDateTimeEditor;
+                    beginDate.ValueChanged += OnDateValueChanged;
                     endDate = LogicalTreeHelper.FindLogicalNode(pageContent, "endDate") as XamDateTimeEditor;
-
+                    endDate.ValueChanged += OnDateValueChanged;
                     downloadToDBButton = LogicalTreeHelper.FindLogicalNode(pageContent, "downloadToDBButton") as Button;
                     downloadToDBButton.Click += OnDownloadToDBButtonClick;
 
@@ -259,13 +260,27 @@ namespace NinjaTrader.NinjaScript.AddOns
                 return pageContent;
             }
         }
+        bool beginDateChanged = false;
+        bool endDateChanged = false;
+        private void OnDateValueChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if( sender == beginDate)
+            {
+                beginDateChanged = true;
+            }
+
+            if( sender == endDate )
+            {
+                endDateChanged = true;
+            }
+        }
 
         private void OnLoadDateButtonClick(object sender, RoutedEventArgs e)
         {
             loadDate();
         }
 
-        private void loadDate(string marketName = null)
+        private void loadDate()
         {
 
             //1. Load Date from C:\Users\Peter12\Documents\NinjaTrader 8
@@ -273,9 +288,40 @@ namespace NinjaTrader.NinjaScript.AddOns
             string dbLocation = profile + "\\Documents\\NinjaTrader 8\\db\\replay\\" + Instrument.FullName + "\\";
             string[] files = Directory.GetFiles(dbLocation);
             Array.Sort(files);
+            /*
+               contractBegin -------------------------- contractEnd 
+                              beginDate ----------endDate
+             */
+            DateTime contractBegin = DataParser.parseDate(files[0]);
+            DateTime contractEnd = DataParser.parseDate(files[files.Length - 1]);
+            //1. Date is empty
+            if ( beginDate.Value == null )
+            {
+                beginDate.Value = contractBegin;
+                beginDateChanged = false;
+            }
+            if( endDate.Value == null )
+            {
+                endDate.Value = contractEnd;
+                endDateChanged = false;
+            }
 
-            beginDate.Value = DataParser.parseDate(files[0]);
-            endDate.Value = DataParser.parseDate(files[files.Length - 1]);
+            //2. Change Instrument
+            if((!"".Equals(instrumentHasLoaded) && !instrumentHasLoaded.Equals(Instrument.FullName)) )
+            {
+                //user do not change Date so we help he change the period
+                if( !beginDateChanged && !endDateChanged)
+                {
+                    beginDate.Value = contractBegin;
+                    endDate.Value = contractEnd;
+                    beginDateChanged = false;
+                    endDateChanged = false;
+                } 
+        
+
+            }
+            
+
 
             instrumentHasLoaded = Instrument.FullName;
         }
@@ -343,10 +389,8 @@ namespace NinjaTrader.NinjaScript.AddOns
             else
             {
                 //1. load beginDate and endDate if needed
-                if (beginDate.Value == null || endDate.Value == null || !instrumentHasLoaded.Equals(Instrument.FullName))
-                {
-                    loadDate(marketName);
-                }
+                loadDate();
+                
 
                 //2. Store Contracts 
                 DateTime begin = (DateTime)beginDate.Value;
