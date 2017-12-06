@@ -29,6 +29,11 @@ namespace NinjaTrader.Custom.MongoDB.Table
                 priceLevel = level;
                 Operation = op;
             }
+
+            public override string ToString()
+            {
+                return base.ToString() + " PriceLevel = " + priceLevel + " Operation = " + Operation;
+            }
         }
         public L2Price(string market, string contract, DateTime time, int updateSeq, int type, int op, int level, double price, int volume)
         {
@@ -40,5 +45,9 @@ namespace NinjaTrader.Custom.MongoDB.Table
         [BsonId]
         public L2PriceId Id { get; set; }
 
+        public override string ToString()
+        {
+            return Id.ToString() + " Volume = " + Volume;
+        }
     }
 }

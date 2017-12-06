@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace NinjaTrader.Custom.Log
 {
@@ -26,7 +27,13 @@ namespace NinjaTrader.Custom.Log
         {
             StringBuilder log = new StringBuilder();
 
-            log.Append("[" + System.Threading.Thread.CurrentThread.Name + "]");
+            if (System.Threading.Thread.CurrentThread.Name != null)
+            {
+                log.Append("[" + System.Threading.Thread.CurrentThread.Name + "]");
+            } else
+            {
+                log.Append("[Thread Id = " + System.Threading.Thread.CurrentThread.ManagedThreadId + "]");
+            }
             foreach (string s in str)
             {
                 log.Append("[" + s + "]");
@@ -36,7 +43,10 @@ namespace NinjaTrader.Custom.Log
         }
         private static void print(StringBuilder log)
         {
-            NinjaTrader.Code.Output.Process(log.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            Core.Globals.RandomDispatcher.BeginInvoke(new Action(() =>
+            {
+                NinjaTrader.Code.Output.Process(log.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            }), DispatcherPriority.SystemIdle);
         }
     }
 }

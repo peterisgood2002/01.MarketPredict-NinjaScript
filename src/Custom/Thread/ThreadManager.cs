@@ -106,8 +106,7 @@ namespace NinjaTrader.Custom.Thread
             }
 
             return Task.Run(() => method.Invoke(obj, p));
-
-
+          
         }
 
         protected static MethodInfo getMethodWithAttribute(Type className, string methodName, BindingFlags flag, Object begin, Object end, Object[] arguments)

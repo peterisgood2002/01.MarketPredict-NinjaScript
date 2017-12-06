@@ -1,4 +1,5 @@
 ﻿using MongoDB.Driver;
+using NinjaTrader.Custom.Log;
 using NinjaTrader.Custom.MongoDB.Table;
 using NinjaTrader.Custom.Thread;
 using System;
@@ -24,14 +25,14 @@ namespace NinjaTrader.Custom.MongoDB.TableOperation
                 }
             }
 
-            NinjaTrader.Code.Output.Process("[PriceOperation.insertPrice] Level 1 :" + l1.Count, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            Logger.Log("[PriceOperation.insertPrice] Level 1 :" + l1.Count);
 
             if ( l1.Count > 0 )
             {
                 SaveManager.save<L1Price>(l1Collection, l1);  
             }
 
-            NinjaTrader.Code.Output.Process("[PriceOperation.insertPrice] Level 2 :" + l2.Count, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            Logger.Log("[PriceOperation.insertPrice] Level 2 :" + l2.Count);
             if ( l2.Count > 0 )
             {
                 SaveManager.save<L2Price>(l2Collection, l2);

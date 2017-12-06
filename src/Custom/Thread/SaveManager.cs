@@ -13,7 +13,7 @@ namespace NinjaTrader.Custom.Thread
     {
         public static void save<T>(IMongoCollection<T> collection, List<T> lprice)
         {
-
+            Logger.Log("SaveManager", "save", "Data Count = " + lprice.Count);
             createThread<T>(new SaveManager(), "save", BindingFlags.Static | BindingFlags.Public, true, 0, lprice.Count, collection, lprice);
 
         }
@@ -31,8 +31,9 @@ namespace NinjaTrader.Custom.Thread
                 }
                 catch (Exception ex)
                 {
-                    NinjaTrader.Code.Output.Process("[PriceOperation.insertPrice][Error] Level 1 :" + price.ToString(), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-                    throw ex;
+                    Logger.Log("PriceOperation.insertPrice", "Error", "Level 1 :", price.ToString());
+
+                    //throw ex;
                     // we do not throw any exception because we treat this execption as normal while we insert price to our database due to the duplication our Ninjascript will create
                 }
 

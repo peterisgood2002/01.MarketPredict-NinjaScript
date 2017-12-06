@@ -49,7 +49,7 @@ namespace NinjaTrader.Custom.MongoDB.Table
             public override string ToString()
             {
                 return "MarketName = " + MarketName + " ContractName = " + ContractName + " ContractDataType = " + ContractDataType + 
-                    " Timestamp = " + Timestamp + "UpdateSeqno = " + UpdateSeqno;
+                    " Timestamp = " + Timestamp + " UpdateSeqno = " + UpdateSeqno + " Price = " + Price ;
             }
         }
         [BsonElementAttribute("V")]

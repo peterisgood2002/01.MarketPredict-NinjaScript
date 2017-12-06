@@ -53,7 +53,8 @@ namespace NinjaTrader.Custom.DataOperation
                 return hashcode;
             }
         }
-        public static List<Figure> parse(string market, string contract, string file, IDictionary<DateTime, List<Figure>> dataInDB)
+        public static List<Figure> parse(string market, string contract, string file, DateTime beginDate, DateTime afterBeginDate, 
+            IDictionary<DateTime, List<Figure>> dataInDB)
         {
             IDictionary<List<Object>, Int32> seq = new Dictionary<List<Object>, Int32>( new ListComparater<Object>() );
             using (StreamReader stream = new StreamReader(file) )
@@ -66,10 +67,10 @@ namespace NinjaTrader.Custom.DataOperation
                     switch( line[0] )
                     {
                         case "L1":
-                            parseL1(data, market, contract, line, seq, dataInDB);
+                            parseL1(data, market, contract, line, beginDate, afterBeginDate, seq, dataInDB);
                             break;
                         case "L2":
-                            parseL2(data, market, contract, line, seq, dataInDB);
+                            parseL2(data, market, contract, line, beginDate, afterBeginDate, seq, dataInDB);
                             break;
                     }
                     
@@ -79,28 +80,32 @@ namespace NinjaTrader.Custom.DataOperation
             }
         }
 
-        private static void parseL2(List<Figure> data, string market, string contract, string[] line, IDictionary<List<Object>, Int32> seq, IDictionary<DateTime, List<Figure>> dataInDB)
+        private static void parseL2(List<Figure> data, string market, string contract, string[] line, DateTime beginDate, DateTime afterBeginDate,
+            IDictionary<List<Object>, Int32> seq, IDictionary<DateTime, List<Figure>> dataInDB)
         {
             try
             {
                 if (line.Length == 9)
                 {
                     DateTime time = parseDate(line[2], line[3]);
-
-                    if (!dataInDB.ContainsKey(time))
+                    if( beginDate <= time && time < afterBeginDate)
                     {
-                        int type = Int32.Parse(line[1]);
+                        if (!dataInDB.ContainsKey(time))
+                        {
+                            int type = Int32.Parse(line[1]);
 
 
-                        int op = Int32.Parse(line[4]);
-                        int level = Int32.Parse(line[5]);
-                        double price = Double.Parse(line[7]);
-                        int volume = Int32.Parse(line[8]);
+                            int op = Int32.Parse(line[4]);
+                            int level = Int32.Parse(line[5]);
+                            double price = Double.Parse(line[7]);
+                            int volume = Int32.Parse(line[8]);
 
-                        int seqNo = getSeq(seq, "L2", type, time, op, level, price);
-                        L2Price amount = new L2Price(market, contract, time, seqNo, type, op, level, price, volume);
-                        data.Add(amount);
+                            int seqNo = getSeq(seq, "L2", type, time, op, level, price);
+                            L2Price amount = new L2Price(market, contract, time, seqNo, type, op, level, price, volume);
+                            data.Add(amount);
+                        }
                     }
+                    
                    
                 } 
 
@@ -112,23 +117,27 @@ namespace NinjaTrader.Custom.DataOperation
 
         }
 
-        private static void parseL1(List<Figure> data, string market, string contract, string[] line, IDictionary<List<Object>, Int32> seq, IDictionary<DateTime, List<Figure>> dataInDB)
+        private static void parseL1(List<Figure> data, string market, string contract, string[] line, DateTime beginDate, DateTime afterBeginDate, 
+            IDictionary<List<Object>, Int32> seq, IDictionary<DateTime, List<Figure>> dataInDB)
         {
             try
             {
                 if (line.Length == 6)
                 {
                     DateTime time = parseDate(line[2], line[3]);
-                    if (!dataInDB.ContainsKey(time))
+                    if (beginDate <= time && time < afterBeginDate)
                     {
-                        int type = Int32.Parse(line[1]);
+                        if (!dataInDB.ContainsKey(time))
+                        {
+                            int type = Int32.Parse(line[1]);
 
-                        double price = Double.Parse(line[4]);
-                        int volume = Int32.Parse(line[5]);
-                        int seqNo = getSeq(seq, "L1", type, time, price);
-                        L1Price amount = new L1Price(market, contract, time, seqNo, type, price, volume);
+                            double price = Double.Parse(line[4]);
+                            int volume = Int32.Parse(line[5]);
+                            int seqNo = getSeq(seq, "L1", type, time, price);
+                            L1Price amount = new L1Price(market, contract, time, seqNo, type, price, volume);
 
-                        data.Add(amount);
+                            data.Add(amount);
+                        }
                     }
                      
                 }

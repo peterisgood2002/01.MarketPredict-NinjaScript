@@ -195,7 +195,7 @@ namespace NinjaTrader.NinjaScript.AddOns
     public class SaveMarketReplayToDBTab : NTTabPage, NinjaTrader.Gui.Tools.IInstrumentProvider, NinjaTrader.Gui.Tools.IIntervalProvider
     {
         String connectionString = "mongodb://localhost:27017/";
-        String tempLocation = "E:\\新增資料夾\\TEST\\tempLoc.txt";
+        String tempLocation = "E:\\新增資料夾\\TEST\\";
         string database = "Develop";
         TextBox txtConnStr = null;
         TextBox tempLoc = null;
@@ -310,7 +310,7 @@ namespace NinjaTrader.NinjaScript.AddOns
             if((!"".Equals(instrumentHasLoaded) && !instrumentHasLoaded.Equals(Instrument.FullName)) )
             {
                 //user do not change Date so we help he change the period
-                if( !beginDateChanged && !endDateChanged)
+                if( !beginDateChanged && !endDateChanged )
                 {
                     beginDate.Value = contractBegin;
                     endDate.Value = contractEnd;
@@ -400,9 +400,9 @@ namespace NinjaTrader.NinjaScript.AddOns
 
                 //3. Create threads to download MarketReplay Data to database
                 //ThreadManager.createThread(this, "testThread", BindingFlags.Public | BindingFlags.Static, false, begin, end);
-                //ThreadManager.createThread(this, "download", BindingFlags.Public | BindingFlags.Static, false, begin, end, 
-                //    connection, database, Instrument, contract, tempLoc.Text);
-                download(begin, end, connection, database, Instrument, contract, tempLoc.Text);
+                ThreadManager.createThread(this, "download", BindingFlags.Public | BindingFlags.Static, false, begin, end,
+                connection, database, Instrument, contract, tempLoc.Text);
+                //download(begin, end, connection, database, Instrument, contract, tempLoc.Text);
 
             }
             #endregion
@@ -413,31 +413,40 @@ namespace NinjaTrader.NinjaScript.AddOns
         public static void download(DateTime beginDate, DateTime endDate, MongoClient connection, string dbName, Instrument Instrument, Contracts contract, string tmpFolder)
         {
             Logger.Log( "download", "Begin = " + beginDate, " End = " + endDate, "BEGIN");
-            
 
-            beginDate = new DateTime(2017, 8, 31);
-            DateTime afterBeginDate = beginDate.AddDays(1);
-            Core.Globals.RandomDispatcher.BeginInvoke(new Action(() =>
+            for (DateTime now = beginDate; now < endDate; now = now.AddDays(1))
             {
-                string file = tmpFolder;
-                NinjaTrader.Code.Output.Process(String.Format("Dump Data: {0} Time={1} millisecond = {2} ", file, DateTime.Now, DateTime.Now.Ticks / 10000000), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-                //MarketReplay.DumpMarketDepth(Instrument, beginDate, afterBeginDate, file);
-                DateTime firstDate = DataParser.parseDate(file, false);
-                DateTime lastDate = DataParser.parseDate(file, true);
-
-                NinjaTrader.Code.Output.Process("First Date of File" + file + " = " + firstDate, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-                NinjaTrader.Code.Output.Process("Last Date of File" + file + " = " + lastDate, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-                IDictionary<DateTime, List<Figure>> dataInDB = MongoDBMethod.searchPrice(connection, dbName, firstDate, lastDate);
-
-                NinjaTrader.Code.Output.Process(String.Format("Load Data: {0} Time={1} millisecond = {2}", file, DateTime.Now, DateTime.Now.Ticks / 10000000), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-                List<Figure> data = DataParser.parse(contract.Id.MarketName, contract.Id.ContractName, file, dataInDB);
-                NinjaTrader.Code.Output.Process(String.Format("Finish Data: {0} Time={1} millisecond = {2}", file, DateTime.Now, DateTime.Now.Ticks / 10000000), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
-                MongoDBMethod.insertPrice(connection, dbName, data);
+                DateTime afterBeginDate = now.AddDays(1);
+                Logger.Log("download", "Now = " + now);
+                doanloadImpl(now, afterBeginDate, connection, dbName, Instrument, contract, tmpFolder);
+            }
 
 
-            }), DispatcherPriority.SystemIdle);
-            NinjaTrader.Code.Output.Process("Date=" + new DateTime(2017, 3, 9), NinjaTrader.NinjaScript.PrintTo.OutputTab1);
             Logger.Log("download", "Begin = " + beginDate, " End = " + endDate, "END");
+        }
+
+        public static void doanloadImpl(DateTime beginDate, DateTime afterBeginDate, MongoClient connection, string dbName, Instrument Instrument, Contracts contract, string tmpFolder)
+        {
+           
+            string file = tmpFolder + beginDate.Year + "_" + beginDate.Month + "_" + beginDate.Day + ".txt";
+            Logger.Log("doanloadImpl", String.Format("Dump Data: {0} Time={1} millisecond = {2} ", file, DateTime.Now, DateTime.Now.Ticks / 10000000));
+
+            MarketReplay.DumpMarketDepth(Instrument, beginDate, beginDate, file);
+            DateTime firstDate = DataParser.parseDate(file, false);
+            DateTime lastDate = DataParser.parseDate(file, true);
+
+            Logger.Log("doanloadImpl", "First Date of File " + file + " = " + firstDate);
+            Logger.Log("doanloadImpl", "Last Date of File " + file + " = " + lastDate);
+            IDictionary<DateTime, List<Figure>> dataInDB = MongoDBMethod.searchPrice(connection, dbName, firstDate, lastDate);
+
+            Logger.Log("doanloadImpl", String.Format("Load Data: {0} Time={1} millisecond = {2}", file, DateTime.Now, DateTime.Now.Ticks / 10000000));
+
+            List<Figure> data = DataParser.parse(contract.Id.MarketName, contract.Id.ContractName, file, beginDate, afterBeginDate, dataInDB);
+            Logger.Log("doanloadImpl", String.Format("Finish Data: {0} Time={1} millisecond = {2}", file, DateTime.Now, DateTime.Now.Ticks / 10000000));
+            MongoDBMethod.insertPrice(connection, dbName, data);
+
+            Logger.Log("doanloadImpl", "Date=" + beginDate, "END");
+            
         }
         [ThreadMethod("testThread")]
         public static void testThread(DateTime begin , DateTime end)

@@ -1,6 +1,7 @@
 ﻿using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 using NinjaTrader.Cbi;
+using NinjaTrader.Custom.Log;
 using NinjaTrader.Custom.MongoDB.Table;
 using NinjaTrader.Custom.MongoDB.TableOperation;
 using System;
@@ -167,7 +168,7 @@ namespace NinjaTrader.Custom.MongoDB
 
         public static void insertPrice(MongoClient connection, string dbName, List<Figure> data)
         {
-            NinjaTrader.Code.Output.Process("[insertPrice] Connection:" + connection + "DB = " + dbName + " Data Length = " + data.Count, NinjaTrader.NinjaScript.PrintTo.OutputTab1);
+            Logger.Log("[insertPrice] Connection:" + connection + "DB = " + dbName + " Data Length = " + data.Count);
 
             IMongoDatabase db = connection.GetDatabase(dbName);
 

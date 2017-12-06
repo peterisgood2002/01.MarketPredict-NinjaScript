@@ -18,7 +18,7 @@ namespace NinjaTrader.Custom.MongoDB.Table
         
         public override string ToString()
         {
-            return Id.ToString();
+            return Id.ToString() + " Volume = " + Volume;
         }
         
     }
